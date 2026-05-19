@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Tic Tac Toe AI Game</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(135deg,#0f172a,#111827,#1e293b);
+    overflow:hidden;
+    position:relative;
+}
+
+/* Background Glow */
+
+body::before,
+body::after{
+    content:"";
+    position:absolute;
+    border-radius:50%;
+    filter:blur(50px);
+    z-index:0;
+}
+
+body::before{
+    width:350px;
+    height:350px;
+    background:#06b6d4;
+    top:-100px;
+    left:-100px;
+    opacity:0.4;
+}
+
+body::after{
+    width:300px;
+    height:300px;
+    background:#8b5cf6;
+    bottom:-100px;
+    right:-100px;
+    opacity:0.4;
+}
+
+.container{
+    width:90%;
+    max-width:430px;
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:25px;
+    padding:30px 25px;
+    text-align:center;
+    color:white;
+    box-shadow:0 10px 40px rgba(0,0,0,0.5);
+    position:relative;
+    z-index:1;
+}
+
+.title{
+    font-size:2.5rem;
+    font-weight:bold;
+    margin-bottom:10px;
+    background:linear-gradient(to right,#38bdf8,#a855f7);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.subtitle{
+    color:#cbd5e1;
+    margin-bottom:20px;
+}
+
+.mode-buttons{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.mode-buttons button{
+    flex:1;
+}
+
+.status{
+    font-size:1.2rem;
+    margin-bottom:20px;
+    font-weight:bold;
+    color:#facc15;
+}
+
+.board{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:25px;
+}
+
+.cell{
+    width:100%;
+    aspect-ratio:1/1;
+    background:rgba(255,255,255,0.12);
+    border-radius:18px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:3rem;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+    border:2px solid rgba(255,255,255,0.08);
+}
+
+.cell:hover{
+    background:rgba(255,255,255,0.2);
+    transform:scale(1.05);
+}
+
+.cell.x{
+    color:#38bdf8;
+    text-shadow:0 0 15px #38bdf8;
+}
+
+.cell.o{
+    color:#f472b6;
+    text-shadow:0 0 15px #f472b6;
+}
+
+button{
+    padding:14px 20px;
+    border:none;
+    border-radius:50px;
+    background:linear-gradient(45deg,#06b6d4,#3b82f6);
+    color:white;
+    font-size:1rem;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    transform:translateY(-3px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+}
+
+.active-mode{
+    background:linear-gradient(45deg,#8b5cf6,#ec4899);
+}
+
+.footer{
+    margin-top:15px;
+    color:#cbd5e1;
+    font-size:0.9rem;
+}
+
+/* Winning Glow */
+
+.win{
+    animation:glow 0.7s infinite alternate;
+}
+
+@keyframes glow{
+
+    from{
+        box-shadow:0 0 10px rgba(255,255,255,0.3);
+    }
+
+    to{
+        box-shadow:0 0 25px rgba(255,255,255,0.9);
+    }
+}
+
+/* Mobile */
+
+@media(max-width:500px){
+
+    .container{
+        padding:25px 18px;
+    }
+
+    .title{
+        font-size:2rem;
+    }
+
+    .cell{
+        font-size:2.5rem;
+    }
+
+    .mode-buttons{
+        flex-direction:column;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1 class="title">Tic Tac Toe</h1>
+
+    <p class="subtitle">
+        Play with Friend or AI
+    </p>
+
+    <div class="mode-buttons">
+
+        <button id="friendBtn" class="active-mode">
+            2 Players
+        </button>
+
+        <button id="aiBtn">
+            Play vs AI
+        </button>
+
+    </div>
+
+    <div class="status" id="status">
+        Player X's Turn
+    </div>
+
+    <div class="board">
+
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+
+    </div>
+
+    <button onclick="restartGame()">
+        Restart Game
+    </button>
+
+    <div class="footer">
+        Get three in a row to win the game!
+    </div>
+
+</div>
+
+<script>
+
+const cells = document.querySelectorAll(".cell");
+const statusText = document.getElementById("status");
+
+const friendBtn = document.getElementById("friendBtn");
+const aiBtn = document.getElementById("aiBtn");
+
+let currentPlayer = "X";
+let gameActive = true;
+
+let vsAI = false;
+
+let board = ["","","","","","","","",""];
+
+const winningConditions = [
+    [0,1,2],
+    [3,4,5],
+    [6,7,8],
+    [0,3,6],
+    [1,4,7],
+    [2,5,8],
+    [0,4,8],
+    [2,4,6]
+];
+
+/* GAME MODE */
+
+friendBtn.addEventListener("click", () => {
+
+    vsAI = false;
+
+    friendBtn.classList.add("active-mode");
+    aiBtn.classList.remove("active-mode");
+
+    restartGame();
+});
+
+aiBtn.addEventListener("click", () => {
+
+    vsAI = true;
+
+    aiBtn.classList.add("active-mode");
+    friendBtn.classList.remove("active-mode");
+
+    restartGame();
+});
+
+/* CELL CLICK */
+
+cells.forEach(cell => {
+
+    cell.addEventListener("click", handleCellClick);
+
+});
+
+function handleCellClick(e){
+
+    const cell = e.target;
+    const index = cell.getAttribute("data-index");
+
+    if(board[index] !== "" || !gameActive){
+        return;
+    }
+
+    makeMove(index, currentPlayer);
+
+    if(vsAI && gameActive && currentPlayer === "O"){
+
+        setTimeout(aiMove, 500);
+    }
+}
+
+/* MAKE MOVE */
+
+function makeMove(index, player){
+
+    board[index] = player;
+
+    cells[index].innerHTML = player;
+
+    cells[index].classList.add(player.toLowerCase());
+
+    checkWinner();
+}
+
+/* CHECK WINNER */
+
+function checkWinner(){
+
+    let roundWon = false;
+
+    for(let condition of winningConditions){
+
+        const a = board[condition[0]];
+        const b = board[condition[1]];
+        const c = board[condition[2]];
+
+        if(a === "" || b === "" || c === ""){
+            continue;
+        }
+
+        if(a === b && b === c){
+
+            roundWon = true;
+
+            condition.forEach(index => {
+
+                cells[index].classList.add("win");
+
+            });
+
+            break;
+        }
+    }
+
+    if(roundWon){
+
+        /* AI WIN MESSAGE */
+
+        if(vsAI && currentPlayer === "O"){
+
+            statusText.innerHTML = " Player AI Wins!";
+
+        }else{
+
+            statusText.innerHTML = ` Player ${currentPlayer} Wins!`;
+
+        }
+
+        gameActive = false;
+
+        return;
+    }
+
+    if(!board.includes("")){
+
+        statusText.innerHTML = " It's a Draw!";
+
+        gameActive = false;
+
+        return;
+    }
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+
+    if(vsAI && currentPlayer === "O"){
+
+        statusText.innerHTML = " AI's Turn";
+
+    }else{
+
+        statusText.innerHTML = `Player ${currentPlayer}'s Turn`;
+
+    }
+}
+
+/* AI MOVE */
+
+function aiMove(){
+
+    let emptyCells = [];
+
+    board.forEach((cell,index) => {
+
+        if(cell === ""){
+            emptyCells.push(index);
+        }
+    });
+
+    if(emptyCells.length === 0){
+        return;
+    }
+
+    let randomIndex =
+        emptyCells[Math.floor(Math.random() * emptyCells.length)];
+
+    makeMove(randomIndex, "O");
+}
+
+/* RESTART GAME */
+
+function restartGame(){
+
+    board = ["","","","","","","","",""];
+
+    currentPlayer = "X";
+
+    gameActive = true;
+
+    statusText.innerHTML = "Player X's Turn";
+
+    cells.forEach(cell => {
+
+        cell.innerHTML = "";
+
+        cell.classList.remove("x","o","win");
+
+    });
+}
+
+</script>
+
+</body>
+</html>
